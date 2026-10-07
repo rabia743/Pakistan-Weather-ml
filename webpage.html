@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weather Football Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<!-- Preload all stadium images for instant display -->
+<link rel="preload" as="image" href="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1920&q=80&auto=format&fit=crop">
+<link rel="preload" as="image" href="https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=1920&q=80&auto=format&fit=crop">
+<link rel="preload" as="image" href="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80&auto=format&fit=crop">
+<link rel="preload" as="image" href="https://images.unsplash.com/photo-1518604666860-9ed391f76460?w=1920&q=80&auto=format&fit=crop">
+<link rel="preload" as="image" href="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1920&q=80&auto=format&fit=crop">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  :root {
+    --bg:          #fafbfc;
+    --surface:     #ffffff;
+    --ink:         #0a0f1c;
+    --ink-2:       #1e293b;
+    --ink-muted:   #64748b;
+    --ink-subtle:  #94a3b8;
+    --line:        #e5e9ef;
+    --line-2:      #eef1f5;
+    --accent:      #0d6efd;
+    --accent-soft: #eef5ff;
+    --success:     #0f9d58;
+    --success-soft:#e8f6ee;
+    --danger:      #dc2626;
+    --danger-soft: #fee2e2;
+    --amber:       #f59e0b;
+    --radius:      12px;
+    --radius-lg:   20px;
+    --shadow-sm:   0 1px 3px rgba(10,15,28,0.06), 0 1px 2px rgba(10,15,28,0.04);
+    --shadow-md:   0 4px 16px rgba(10,15,28,0.06), 0 2px 6px rgba(10,15,28,0.04);
+    --shadow-lg:   0 20px 50px rgba(10,15,28,0.08), 0 6px 20px rgba(10,15,28,0.05);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0a0f1c;
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ============================================================
+     BACKGROUND — Fast Loading Stadium Images
+     ============================================================ */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    overflow: hidden;
+    background: #0a0f1c;
+  }
+
+  /* First image — ALWAYS visible (fixes black screen) */
+  .stadium-base {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1920&q=80&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(1.15) saturate(1.1);
+  }
+
+  /* Rotating slides */
+  .stadium-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    animation: stadiumFade 40s infinite;
+    filter: brightness(1.15) saturate(1.1);
+    will-change: opacity;
+  }
+
+  .stadium-slide:nth-child(2) {
+    background-image: url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1920&q=80&auto=format&fit=crop');
+    animation-delay: 0s;
+  }
+  .stadium-slide:nth-child(3) {
+    background-image: url('https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=1920&q=80&auto=format&fit=crop');
+    animation-delay: 8s;
+  }
+  .stadium-slide:nth-child(4) {
+    background-image: url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80&auto=format&fit=crop');
+    animation-delay: 16s;
+  }
+  .stadium-slide:nth-child(5) {
+    background-image: url('https://images.unsplash.com/photo-1518604666860-9ed391f76460?w=1920&q=80&auto=format&fit=crop');
+    animation-delay: 24s;
+  }
+  .stadium-slide:nth-child(6) {
+    background-image: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1920&q=80&auto=format&fit=crop');
+    animation-delay: 32s;
+  }
+
+  /* Fade animation — NO ZOOM (prevents blur) */
+  @keyframes stadiumFade {
+    0%    { opacity: 0; }
+    2%    { opacity: 1; }
+    14.5% { opacity: 1; }
+    16.6% { opacity: 0; }
+    100%  { opacity: 0; }
+  }
+
+  /* Light overlay — much lighter now (was too heavy) */
+  .bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(250, 251, 252, 0.75) 0%,
+      rgba(250, 251, 252, 0.55) 30%,
+      rgba(250, 251, 252, 0.65) 60%,
+      rgba(240, 253, 244, 0.85) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Very subtle grid */
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(10,15,28,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,15,28,0.015) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Stadium indicator dots */
+  .stadium-indicator {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(14px);
+    border-radius: 999px;
+    border: 1px solid rgba(10,15,28,0.08);
+    box-shadow: 0 4px 16px rgba(10,15,28,0.1);
+  }
+  .stadium-indicator .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(10,15,28,0.15);
+    transition: all 0.35s ease;
+  }
+  .stadium-indicator .dot.active {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px rgba(13,110,253,0.2);
+    transform: scale(1.2);
+  }
+
+  /* ============================================================
+     NAV
+     ============================================================ */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    background: rgba(250, 251, 252, 0.85);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .brand-mark {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #0d6efd, #0f9d58);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 12px rgba(13,110,253,0.3);
+    animation: markPulse 3s ease-in-out infinite;
+  }
+  @keyframes markPulse {
+    0%,100% { box-shadow: 0 4px 12px rgba(13,110,253,0.3); }
+    50%     { box-shadow: 0 4px 20px rgba(13,110,253,0.5); }
+  }
+  .brand-text small {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+  .nav-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    padding: 6px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  .nav-status .pulse {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    position: relative;
+  }
+  .nav-status .pulse::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1px solid var(--success);
+    opacity: 0.5;
+    animation: pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes pingPulse {
+    0%   { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 100px 24px 60px;
+    text-align: center;
+    position: relative;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(10px);
+    animation: fadeDown 0.7s ease;
+  }
+  .eyebrow .tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+  .hero h1 {
+    font-size: clamp(42px, 6vw, 74px);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    color: var(--ink);
+    margin-bottom: 20px;
+    animation: fadeDown 0.8s ease 0.05s both;
+    text-shadow: 0 2px 20px rgba(255,255,255,0.6);
+  }
+  .hero h1 .serif {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-style: italic;
+    background: linear-gradient(135deg, #0d6efd 0%, #0f9d58 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding-right: 4px;
+    filter: drop-shadow(0 2px 10px rgba(255,255,255,0.4));
+  }
+  .hero p {
+    max-width: 620px;
+    margin: 0 auto;
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    animation: fadeDown 0.9s ease 0.1s both;
+    text-shadow: 0 1px 12px rgba(255,255,255,0.7);
+  }
+
+  /* ============================================================
+     FORM
+     ============================================================ */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 100px;
+    position: relative;
+    z-index: 1;
+  }
+  .form-card {
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 48px;
+    box-shadow: 0 30px 80px rgba(10,15,28,0.15);
+    backdrop-filter: blur(16px);
+    animation: fadeUp 0.7s ease 0.2s both;
+    position: relative;
+    overflow: hidden;
+  }
+  .form-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    height: 3px;
+    width: 100%;
+    background: linear-gradient(90deg,
+      transparent,
+      var(--accent) 25%,
+      var(--success) 50%,
+      var(--amber) 75%,
+      transparent);
+    background-size: 200% 100%;
+    animation: borderFlow 4s linear infinite;
+  }
+  @keyframes borderFlow {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
+  .form-header {
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line-2);
+    margin-bottom: 40px;
+  }
+  .form-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .form-header p { font-size: 14px; color: var(--ink-muted); }
+
+  .form-section { margin-bottom: 40px; }
+  .form-section:last-of-type { margin-bottom: 28px; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .section-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .section-label small {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-subtle);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 2px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 16px;
+  }
+
+  .input-group { display: flex; flex-direction: column; }
+  .input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-2);
+    margin-bottom: 8px;
+    text-transform: capitalize;
+  }
+  .input-group input {
+    background: #fbfcfe;
+    border: 1px solid #dce3ed;
+    border-radius: var(--radius);
+    padding: 15px 16px;
+    color: var(--ink);
+    font-size: 16px;
+    font-family: inherit;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    outline: none;
+    width: 100%;
+  }
+  .input-group input:hover { border-color: #aebdd0; background: #fff; }
+  .input-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
+    transform: translateY(-1px);
+    background: #fff;
+  }
+  .input-group input::placeholder { color: #9aa8ba; font-weight: 400; }
+  .input-group .hint {
+    font-size: 11px;
+    color: var(--ink-subtle);
+    margin-top: 6px;
+  }
+  .input-group input:focus-visible { outline: none; }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .form-actions .btn-primary,
+  .form-actions .btn-secondary {
+    flex: 1;
+    margin-top: 0;
+  }
+
+  /* Button */
+  .btn-primary {
+    width: 100%;
+    padding: 18px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #fff;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a5ad4 100%);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(13,110,253,0.35);
+    letter-spacing: 0.3px;
+    margin-top: 12px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(13,110,253,0.45);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.7; cursor: wait; }
+  .btn-primary::after {
+    content: "";
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.7s ease;
+  }
+  .btn-primary:hover::after { left: 150%; }
+  .btn-primary .arrow { transition: transform 0.25s ease; }
+  .btn-primary:hover .arrow { transform: translateX(4px); }
+  .btn-primary.loading .btn-content { opacity: 0; }
+  .btn-primary.loading .btn-loader { display: block; }
+  .btn-loader {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    margin: -10px 0 0 -10px;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ============================================================
+     MODAL
+     ============================================================ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 15, 28, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  .modal-overlay.active { display: flex; animation: fadeIn 0.25s ease; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 44px 40px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 40px 100px rgba(10, 15, 28, 0.28);
+    animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .modal::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--success), var(--amber), var(--accent));
+    background-size: 300% 100%;
+    animation: borderFlow 3s linear infinite;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink-subtle);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+  }
+  .modal-close:hover {
+    background: var(--bg);
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .result-badge.yes { background: var(--success-soft); color: var(--success); }
+  .result-badge.no  { background: var(--danger-soft);  color: var(--danger); }
+  .result-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: dotBlink 1.5s ease-in-out infinite;
+  }
+  @keyframes dotBlink {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: 0.4; transform: scale(0.85); }
+  }
+  .modal h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .modal .result-sub {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.55;
+    margin-bottom: 32px;
+  }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn-secondary {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-secondary:hover {
+    background: var(--bg);
+    border-color: #cdd5e0;
+    transform: translateY(-1px);
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-muted);
+    position: relative;
+    z-index: 1;
+    background: rgba(250, 251, 252, 0.85);
+    backdrop-filter: blur(10px);
+  }
+  footer .dot-sep {
+    display: inline-block;
+    margin: 0 10px;
+    color: var(--ink-subtle);
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (max-width: 720px) {
+    .form-card { padding: 28px 22px; border-radius: 16px; }
+    .hero { padding: 60px 20px 40px; }
+    .hero h1 { letter-spacing: -0.03em; }
+    .nav-inner { padding: 14px 20px; }
+    .container { padding: 0 20px 60px; }
+    .modal { padding: 30px 24px; }
+    .modal h2 { font-size: 22px; }
+    .stadium-indicator { bottom: 16px; right: 16px; padding: 8px 12px; }
+    .stadium-indicator .dot { width: 6px; height: 6px; }
+  }
+  @media (max-width: 420px) {
+    .form-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     BACKGROUND — Fast Loading Stadium Images
+     ============================================================ -->
+<div class="bg-layer">
+
+  <!-- Base image — ALWAYS visible (fixes black screen) -->
+  <div class="stadium-base"></div>
+
+  <!-- Rotating slides -->
+  <div class="stadium-slide"></div>
+  <div class="stadium-slide"></div>
+  <div class="stadium-slide"></div>
+  <div class="stadium-slide"></div>
+  <div class="stadium-slide"></div>
+
+  <!-- Light overlay -->
+  <div class="bg-overlay"></div>
+  <div class="bg-grid"></div>
+
+</div>
+
+<!-- Stadium indicator dots -->
+<div class="stadium-indicator" id="indicator">
+  <div class="dot active"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+
+<!-- ============================================================
+     NAV
+     ============================================================ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-mark">⚽</div>
+      <div class="brand-text">
+        Weather Football
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<header class="hero">
+  <h1>
+    Football Weather<br>
+    <span class="serif">Prediction</span>
+  </h1>
+
+  <p>Enter weather details to check whether conditions are suitable for football.</p>
+
+</header>
+
+<!-- ============================================================
+     FORM
+     ============================================================ -->
+<main class="container">
+  <div class="form-card">
+
+    <div class="form-header">
+      <h2>Weather Details</h2>
+      <p>Enter each value within its allowed range.</p>
+    </div>
+
+    <form id="predictForm" autocomplete="off">
+      <!-- Section 1: Temperature -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="section-num">1</div>
+          <div class="section-label">
+            Temperature
+          </div>
+        </div>
+        <div class="grid">
+          <div class="input-group">
+            <label for="Tavg">Average Temperature</label>
+            <input type="number" step="any" id="Tavg" name="Tavg"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Tavg-range" required>
+            <span class="hint" id="Tavg-range"></span>
+          </div>
+          <div class="input-group">
+            <label for="Tmin">Minimum Temperature</label>
+            <input type="number" step="any" id="Tmin" name="Tmin"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Tmin-range" required>
+            <span class="hint" id="Tmin-range"></span>
+          </div>
+          <div class="input-group">
+            <label for="Tmax">Maximum Temperature</label>
+            <input type="number" step="any" id="Tmax" name="Tmax"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Tmax-range" required>
+            <span class="hint" id="Tmax-range"></span>
+          </div>
+          <div class="input-group">
+            <label for="Dew_Point">Dew Point</label>
+            <input type="number" step="any" id="Dew_Point" name="Dew_Point"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Dew_Point-range" required>
+            <span class="hint" id="Dew_Point-range"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Atmosphere -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="section-num">2</div>
+          <div class="section-label">
+            Other Conditions
+          </div>
+        </div>
+        <div class="grid">
+          <div class="input-group">
+            <label for="Humidity">Humidity</label>
+            <input type="number" step="any" id="Humidity" name="Humidity"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Humidity-range" required>
+            <span class="hint" id="Humidity-range"></span>
+          </div>
+          <div class="input-group">
+            <label for="Prcp">Precipitation</label>
+            <input type="number" step="any" id="Prcp" name="Prcp"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Prcp-range" required>
+            <span class="hint" id="Prcp-range"></span>
+          </div>
+          <div class="input-group">
+            <label for="Cloud_Cover">Cloud Cover</label>
+            <input type="number" step="any" id="Cloud_Cover" name="Cloud_Cover"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Cloud_Cover-range" required>
+            <span class="hint" id="Cloud_Cover-range"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Wind -->
+      <div class="form-section">
+        <div class="section-title">
+          <div class="section-num">3</div>
+          <div class="section-label">
+            Wind
+          </div>
+        </div>
+        <div class="grid">
+          <div class="input-group">
+            <label for="Wspd">Wind Speed</label>
+            <input type="number" step="any" id="Wspd" name="Wspd"
+                   inputmode="decimal" placeholder="Enter a number"
+                   aria-describedby="Wspd-range" required>
+            <span class="hint" id="Wspd-range"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="predictBtn" disabled>
+          <span class="btn-content">Predict <span class="arrow">→</span></span>
+          <span class="btn-loader"></span>
+        </button>
+        <button type="reset" class="btn-secondary" id="resetBtn">Reset</button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+
+      <div class="result-badge yes" id="resultBadge">
+        <span class="dot"></span>
+        <span id="badgeText">Prediction result</span>
+      </div>
+
+      <h2 id="resultLabel">Result</h2>
+      <p class="result-sub" id="resultSub"></p>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  /* Stadium indicator */
+  const dots = document.querySelectorAll(".stadium-indicator .dot");
+  const totalSlides = 5;
+  const slideDuration = 8000;
+  let currentSlide = 0;
+
+  setInterval(() => {
+    dots.forEach(d => d.classList.remove("active"));
+    currentSlide = (currentSlide + 1) % totalSlides;
+    dots[currentSlide].classList.add("active");
+  }, slideDuration);
+
+  /* Prediction logic */
+  const FEATURES = ["Tavg", "Prcp", "Wspd", "Humidity", "Cloud_Cover", "Tmin", "Tmax", "Dew_Point"];
+  const form  = document.getElementById("predictForm");
+  const btn   = document.getElementById("predictBtn");
+  const modal = document.getElementById("modal");
+
+  form.addEventListener("reset", () => {
+    closeModal();
+  });
+
+  async function loadInputRanges() {
+    try {
+      const res = await fetch("/ranges");
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        throw new Error("Could not load the input ranges from the server.");
+      }
+
+      const ranges = await res.json();
+      for (const feature of FEATURES) {
+        const range = ranges[feature];
+        if (!Array.isArray(range) || range.length !== 2) {
+          throw new Error(`Range data is missing for ${feature}.`);
+        }
+
+        const input = document.getElementById(feature);
+        input.min = range[0];
+        input.max = range[1];
+        document.getElementById(`${feature}-range`).textContent =
+          `Allowed: ${range[0]} – ${range[1]}`;
+      }
+
+      btn.disabled = false;
+    } catch (err) {
+      alert("Could not prepare the weather inputs: " + err.message);
+    }
+  }
+
+  loadInputRanges();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    const data = {};
+    for (const f of FEATURES) {
+      data[f] = parseFloat(document.getElementById(f).value);
+    }
+
+    try {
+      const res  = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          "Server returned a webpage instead of JSON. Start app.py and open http://127.0.0.1:5000/ (not Live Server or the HTML file directly)."
+        );
+      }
+
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        throw new Error(json.error || `Request failed (${res.status}).`);
+      }
+      showResult(json);
+    } catch (err) {
+      alert("Prediction failed: " + err.message);
+    } finally {
+      btn.classList.remove("loading");
+      btn.disabled = false;
+    }
+  });
+
+  function showResult(r) {
+    const badge = document.getElementById("resultBadge");
+    const badgeText = document.getElementById("badgeText");
+    const label = document.getElementById("resultLabel");
+    const sub   = document.getElementById("resultSub");
+    const prediction = r.prediction !== undefined ? r.prediction : (r.football_play === "Yes" ? 1 : 0);
+
+    if (prediction === 1) {
+      badge.className = "result-badge yes";
+      badgeText.textContent = "Yes";
+      label.textContent = "You can play football!";
+      sub.textContent = "The weather conditions are suitable for playing.";
+    } else {
+      badge.className = "result-badge no";
+      badgeText.textContent = "No";
+      label.textContent = "You should not play football.";
+      sub.textContent = Array.isArray(r.advice) && r.advice.length
+        ? r.advice.join(" ")
+        : "The weather conditions are not suitable for playing.";
+    }
+
+    modal.classList.add("active");
+  }
+
+  function closeModal() { modal.classList.remove("active"); }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+</script>
+</body>
+</html>
